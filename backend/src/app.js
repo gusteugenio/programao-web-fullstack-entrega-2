@@ -4,6 +4,8 @@ import helmet from "helmet";
 import compression from "compression";
 import morgan from "morgan";
 import cors from "cors";
+import perfectExpressSanitizer from "perfect-express-sanitizer";
+import xss from "xss";
 import authRoutes from "./routes/auth.js";
 import booksRoutes from "./routes/books.js";
 
@@ -17,18 +19,23 @@ app.use(cors({ origin: process.env.CORS_ORIGIN || "http://localhost:5173" }));
 app.use(express.json({ limit: "10kb" }));
 app.use(morgan("combined"));
 
+app.use(
+  perfectExpressSanitizer.clean({
+    xss: true,
+    noSql: true,
+    sql: true,
+    level: 5,
+  })
+);
+
 app.use((req, res, next) => {
-  const strip = (obj) => {
-    if (!obj || typeof obj !== "object") return;
-    for (const key of Object.keys(obj)) {
-      if (key.startsWith("$") || key.includes(".")) {
-        delete obj[key];
-      } else if (typeof obj[key] === "object") {
-        strip(obj[key]);
+  if (req.body && typeof req.body === "object") {
+    for (const key of Object.keys(req.body)) {
+      if (typeof req.body[key] === "string") {
+        req.body[key] = xss(req.body[key]);
       }
     }
-  };
-  strip(req.body);
+  }
   next();
 });
 
