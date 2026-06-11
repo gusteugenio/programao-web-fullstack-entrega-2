@@ -15,11 +15,6 @@ function Search() {
   const [fieldError, setFieldError] = useState("");
 
   const handleSearch = async () => {
-    if (!query.trim()) {
-      setFieldError("Digite o nome de um livro antes de buscar.");
-      return;
-    }
-
     setFieldError("");
     await searchBooks();
   };

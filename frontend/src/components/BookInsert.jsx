@@ -8,21 +8,26 @@ import {
   Alert,
 } from "@mui/material";
 import { useState } from "react";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useBooks } from "../contexts/useBooks";
 
 function BookInsert({ onClose }) {
-  const { insertBook } = useBooks();
+  const { insertBook, searchBooks, query } = useBooks();
   const [form, setForm] = useState({ title: "", author: "", year: "", edition_count: "" });
   const [fieldErrors, setFieldErrors] = useState({});
   const [serverError, setServerError] = useState("");
-  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const validate = () => {
     const errors = {};
     if (!form.title.trim()) errors.title = "O campo título é obrigatório.";
     if (!form.author.trim()) errors.author = "O campo autor é obrigatório.";
-    if (form.year && (isNaN(Number(form.year)) || Number(form.year) < 1 || Number(form.year) > new Date().getFullYear())) {
+    if (
+      form.year &&
+      (isNaN(Number(form.year)) ||
+        Number(form.year) < 1 ||
+        Number(form.year) > new Date().getFullYear())
+    ) {
       errors.year = "Informe um ano válido.";
     }
     return errors;
@@ -55,19 +60,27 @@ function BookInsert({ onClose }) {
       return;
     }
 
-    setSuccess(true);
-    setForm({ title: "", author: "", year: "", edition_count: "" });
+    if (query.trim()) {
+      await searchBooks();
+    }
+
+    await searchBooks();
+    onClose();
   };
 
   return (
     <Box mt={3}>
-      <Typography variant="h6" mb={2}>Cadastrar livro</Typography>
-
-      {success && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(false)}>
-          Livro cadastrado com sucesso!
-        </Alert>
-      )}
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+        <Button
+          variant="text"
+          startIcon={<ArrowBackIcon />}
+          onClick={onClose}
+          sx={{ minWidth: 0, px: 1 }}
+        >
+          Voltar
+        </Button>
+        <Typography variant="h6">Cadastrar livro</Typography>
+      </Box>
 
       {serverError && (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -84,7 +97,9 @@ function BookInsert({ onClose }) {
             onChange={handleChange("title")}
             error={Boolean(fieldErrors.title)}
           />
-          {fieldErrors.title && <FormHelperText error>{fieldErrors.title}</FormHelperText>}
+          {fieldErrors.title && (
+            <FormHelperText error>{fieldErrors.title}</FormHelperText>
+          )}
         </Box>
 
         <Box>
@@ -95,7 +110,9 @@ function BookInsert({ onClose }) {
             onChange={handleChange("author")}
             error={Boolean(fieldErrors.author)}
           />
-          {fieldErrors.author && <FormHelperText error>{fieldErrors.author}</FormHelperText>}
+          {fieldErrors.author && (
+            <FormHelperText error>{fieldErrors.author}</FormHelperText>
+          )}
         </Box>
 
         <Box>
@@ -107,7 +124,9 @@ function BookInsert({ onClose }) {
             onChange={handleChange("year")}
             error={Boolean(fieldErrors.year)}
           />
-          {fieldErrors.year && <FormHelperText error>{fieldErrors.year}</FormHelperText>}
+          {fieldErrors.year && (
+            <FormHelperText error>{fieldErrors.year}</FormHelperText>
+          )}
         </Box>
 
         <TextField

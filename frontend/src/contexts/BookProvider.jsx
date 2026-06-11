@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BookContext } from "./bookContext";
 import { useAuth } from "./useAuth";
 
@@ -18,7 +18,6 @@ export function BooksProvider({ children }) {
     setSearchError("");
 
     if (!value.trim()) {
-      setBooks([]);
       setSelectedBook(null);
     }
   };
@@ -32,13 +31,39 @@ export function BooksProvider({ children }) {
     logout();
   };
 
+  const fetchAll = async () => {
+    if (!token) return;
+
+    try {
+      setLoading(true);
+      const res = await fetch(`${API}/api/books?title=`, {
+        headers: authHeaders(),
+      });
+
+      if (res.status === 401) {
+        handleUnauthorized();
+        return;
+      }
+
+      const data = await res.json();
+      setBooks(Array.isArray(data) ? data : []);
+    } catch {
+      setBooks([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAll();
+  }, [token]);
+
   const searchBooks = async () => {
     setSearchError("");
 
     if (!query.trim()) {
-      setBooks([]);
-      setSelectedBook(null);
-      return false;
+      await fetchAll();
+      return true;
     }
 
     try {

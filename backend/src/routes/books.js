@@ -10,7 +10,7 @@ router.use(requireAuth);
 router.get("/", (req, res) => {
   const { title, author } = req.query;
 
-  if (!title && !author) {
+  if (title !== undefined && !title.trim() && author !== undefined && !author.trim()) {
     return res.status(422).json({ error: "Informe ao menos um critério de busca (título ou autor)." });
   }
 
