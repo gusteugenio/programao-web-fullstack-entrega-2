@@ -54,7 +54,7 @@ PONG
 No segundo terminal:
 
 ```powershell
-cd "C:\Users\Leonardo David\programao-web-fullstack-entrega-2\backend"
+cd backend
 npm install
 npm run seed
 npm start
@@ -71,7 +71,7 @@ http://localhost:3001
 No terceiro terminal:
 
 ```powershell
-cd "C:\Users\Leonardo David\programao-web-fullstack-entrega-2\frontend"
+cd frontend
 npm install
 npm run dev -- --host 127.0.0.1
 ```
