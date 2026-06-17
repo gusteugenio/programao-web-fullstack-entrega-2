@@ -5,9 +5,12 @@ import {
   InputAdornment,
   FormHelperText,
   Box,
+  Paper,
+  Typography,
 } from "@mui/material";
 import { useState } from "react";
 import SearchIcon from "@mui/icons-material/Search";
+import PersonSearchIcon from "@mui/icons-material/PersonSearch";
 import { useBooks } from "../contexts/useBooks";
 
 function Search() {
@@ -31,8 +34,20 @@ function Search() {
   };
 
   return (
-    <Box mt={2}>
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="flex-start">
+    <Paper
+      elevation={0}
+      sx={{
+        p: 2,
+        border: "1px solid",
+        borderColor: "divider",
+        bgcolor: "#fbfcfc",
+      }}
+    >
+      <Typography variant="subtitle1" sx={{ mb: 1.5, fontWeight: 700 }}>
+        Buscar no acervo
+      </Typography>
+
+      <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} alignItems="flex-start">
         <TextField
           fullWidth
           label="Título"
@@ -43,7 +58,7 @@ function Search() {
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <SearchIcon />
+                <SearchIcon fontSize="small" />
               </InputAdornment>
             ),
           }}
@@ -56,6 +71,13 @@ function Search() {
           error={Boolean(fieldError)}
           onChange={handleChange("author")}
           onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <PersonSearchIcon fontSize="small" />
+              </InputAdornment>
+            ),
+          }}
         />
 
         <Button
@@ -63,7 +85,7 @@ function Search() {
           onClick={handleSearch}
           disabled={loading}
           startIcon={<SearchIcon />}
-          sx={{ minWidth: 120, height: 56, width: { xs: "100%", sm: "auto" } }}
+          sx={{ height: 40, minWidth: 120, width: { xs: "100%", md: "auto" } }}
         >
           Buscar
         </Button>
@@ -74,7 +96,7 @@ function Search() {
           {fieldError}
         </FormHelperText>
       )}
-    </Box>
+    </Paper>
   );
 }
 

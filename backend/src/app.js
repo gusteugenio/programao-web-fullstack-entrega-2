@@ -13,11 +13,14 @@ import booksRoutes from "./routes/books.js";
 import { getPoolInfo } from "./config/database.js";
 
 const app = express();
+const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173,http://127.0.0.1:5173")
+  .split(",")
+  .map((origin) => origin.trim());
 
 app.set("trust proxy", 1);
 
 app.use(compression());
-app.use(cors({ origin: process.env.CORS_ORIGIN || "http://localhost:5173" }));
+app.use(cors({ origin: allowedOrigins }));
 app.use(express.json({ limit: "10kb" }));
 app.use(morgan("combined"));
 

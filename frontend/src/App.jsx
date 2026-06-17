@@ -14,8 +14,13 @@ import {
   CircularProgress,
   Box,
   Button,
+  Alert,
+  Stack,
+  Divider,
 } from "@mui/material";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
+import LogoutIcon from "@mui/icons-material/Logout";
+import AddIcon from "@mui/icons-material/Add";
 
 function App() {
   const { token, username, logout } = useAuth();
@@ -27,61 +32,100 @@ function App() {
   }
 
   return (
-    <Container maxWidth="md" sx={{ mt: 5 }}>
-      <Paper elevation={4} sx={{ p: 4 }}>
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+    <Container maxWidth="lg" sx={{ py: { xs: 2, md: 5 } }}>
+      <Paper
+        elevation={0}
+        sx={{
+          border: "1px solid",
+          borderColor: "divider",
+          overflow: "hidden",
+        }}
+      >
+        <Box
+          sx={{
+            px: { xs: 2, sm: 3 },
+            py: 2,
+            display: "flex",
+            alignItems: { xs: "flex-start", sm: "center" },
+            justifyContent: "space-between",
+            gap: 2,
+            flexDirection: { xs: "column", sm: "row" },
+            bgcolor: "#f9fbfb",
+          }}
+        >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <MenuBookIcon fontSize="large" />
-            <Typography variant="h4" component="span">
-              Busca de Livros
-            </Typography>
+            <Box
+              sx={{
+                width: 44,
+                height: 44,
+                borderRadius: 2,
+                display: "grid",
+                placeItems: "center",
+                color: "primary.contrastText",
+                bgcolor: "primary.main",
+              }}
+            >
+              <MenuBookIcon />
+            </Box>
+            <Box>
+              <Typography variant="h5" component="h1">
+                Busca de Livros
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Consulta e cadastro do acervo
+              </Typography>
+            </Box>
           </Box>
 
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Stack direction="row" spacing={1.5} alignItems="center">
             <Typography variant="body2" color="text.secondary">
               {username}
             </Typography>
-            <Button variant="outlined" size="small" onClick={logout}>
+            <Button variant="outlined" size="small" startIcon={<LogoutIcon />} onClick={logout}>
               Sair
             </Button>
-          </Box>
+          </Stack>
         </Box>
 
-        {!selectedBook && !showInsert && (
-          <>
-            <Search />
+        <Divider />
 
-            <Box mt={2}>
-              <Button variant="text" onClick={() => setShowInsert(true)}>
-                + Cadastrar novo livro
-              </Button>
+        <Box sx={{ p: { xs: 2, sm: 3 } }}>
+          {!selectedBook && !showInsert && (
+            <>
+              <Search />
+
+              <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
+                <Button variant="contained" startIcon={<AddIcon />} onClick={() => setShowInsert(true)}>
+                  Cadastrar livro
+                </Button>
+              </Box>
+            </>
+          )}
+
+          {showInsert && (
+            <BookInsert onClose={() => setShowInsert(false)} />
+          )}
+
+          {searchError && !showInsert && (
+            <Alert severity="warning" sx={{ mt: 2 }}>
+              {searchError}
+            </Alert>
+          )}
+
+          {loading && (
+            <Box sx={{ mt: 3, display: "flex", justifyContent: "center" }}>
+              <CircularProgress />
             </Box>
-          </>
-        )}
+          )}
 
-        {showInsert && (
-          <BookInsert onClose={() => setShowInsert(false)} />
-        )}
+          {!loading && !selectedBook && !showInsert && (
+            <BookList />
+          )}
 
-        {searchError && !showInsert && (
-          <Typography color="error" sx={{ mt: 2 }}>
-            {searchError}
-          </Typography>
-        )}
-
-        {loading && (
-          <Box mt={2}>
-            <CircularProgress />
-          </Box>
-        )}
-
-        {!loading && !selectedBook && !showInsert && (
-          <BookList />
-        )}
-
-        {selectedBook && (
-          <BookDetail />
-        )}
+          {selectedBook && (
+            <BookDetail />
+          )}
+        </Box>
       </Paper>
     </Container>
   );

@@ -11,6 +11,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
+import LoginIcon from "@mui/icons-material/Login";
 import { useAuth } from "../contexts/useAuth";
 
 function Login() {
@@ -38,13 +39,38 @@ function Login() {
   };
 
   return (
-    <Container maxWidth="xs" sx={{ mt: 10 }}>
-      <Paper elevation={4} sx={{ p: 4 }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
-          <MenuBookIcon fontSize="large" />
-          <Typography variant="h5" component="span">
-            Busca de Livros
-          </Typography>
+    <Container maxWidth="xs" sx={{ minHeight: "100vh", display: "grid", placeItems: "center", py: 3 }}>
+      <Paper
+        elevation={0}
+        sx={{
+          width: "100%",
+          p: { xs: 3, sm: 4 },
+          border: "1px solid",
+          borderColor: "divider",
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}>
+          <Box
+            sx={{
+              width: 44,
+              height: 44,
+              borderRadius: 2,
+              display: "grid",
+              placeItems: "center",
+              color: "primary.contrastText",
+              bgcolor: "primary.main",
+            }}
+          >
+            <MenuBookIcon />
+          </Box>
+          <Box>
+            <Typography variant="h5" component="h1">
+              Busca de Livros
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Acesse sua sessão para continuar
+            </Typography>
+          </Box>
         </Box>
 
         <Stack spacing={2}>
@@ -94,6 +120,7 @@ function Login() {
             onClick={handleSubmit}
             disabled={loginLoading}
             fullWidth
+            startIcon={!loginLoading && <LoginIcon />}
             sx={{ height: 44 }}
           >
             {loginLoading ? <CircularProgress size={22} /> : "Entrar"}

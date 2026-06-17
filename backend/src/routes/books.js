@@ -5,8 +5,34 @@ import { requireAuth } from "../config/auth.js";
 import { cache } from "../config/cache.js";
 
 const router = Router();
+const CACHE_TTL_SECONDS = Number(process.env.CACHE_TTL_SECONDS || 60);
 
 router.use(requireAuth);
+
+function getCachedBooks(cacheKey) {
+  return new Promise((resolve) => {
+    cache.get(cacheKey, (error, entries) => {
+      if (error || !entries?.length || !entries[0]?.body) {
+        return resolve(null);
+      }
+
+      try {
+        return resolve(JSON.parse(entries[0].body));
+      } catch {
+        return resolve(null);
+      }
+    });
+  });
+}
+
+function setCachedBooks(cacheKey, books) {
+  cache.add(
+    cacheKey,
+    JSON.stringify(books),
+    { expire: CACHE_TTL_SECONDS, type: "application/json" },
+    () => {}
+  );
+}
 
 router.get(
   "/",
@@ -19,17 +45,21 @@ router.get(
 
     const sanitizedTitle = title ? String(title).slice(0, 200) : "";
     const sanitizedAuthor = author ? String(author).slice(0, 200) : "";
-    res.express_redis_cache_name = `books:title=${sanitizedTitle}:author=${sanitizedAuthor}`;
+    req.cacheKey = `books:title=${sanitizedTitle}:author=${sanitizedAuthor}`;
     next();
   },
-  cache.route(),
-  (req, res) => {
+  async (req, res) => {
     const { title, author } = req.query;
 
     const sanitizedTitle = title ? String(title).slice(0, 200) : undefined;
     const sanitizedAuthor = author ? String(author).slice(0, 200) : undefined;
 
     try {
+      const cachedBooks = await getCachedBooks(req.cacheKey);
+      if (cachedBooks) {
+        return res.json(cachedBooks);
+      }
+
       const books = BookModel.findAll({ title: sanitizedTitle, author: sanitizedAuthor });
 
       LogModel.actionEvent({
@@ -39,6 +69,7 @@ router.get(
         ip: req.ip,
       });
 
+      setCachedBooks(req.cacheKey, books);
       return res.json(books);
     } catch (err) {
       return res.status(500).json({ error: "Erro ao buscar livros." });

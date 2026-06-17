@@ -6,13 +6,16 @@ import {
   Box,
   FormHelperText,
   Alert,
+  Paper,
+  Divider,
 } from "@mui/material";
 import { useState } from "react";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import SaveIcon from "@mui/icons-material/Save";
 import { useBooks } from "../contexts/useBooks";
 
 function BookInsert({ onClose }) {
-  const { insertBook, searchBooks, query } = useBooks();
+  const { insertBook, searchBooks } = useBooks();
   const [form, setForm] = useState({ title: "", author: "", year: "", edition_count: "" });
   const [fieldErrors, setFieldErrors] = useState({});
   const [serverError, setServerError] = useState("");
@@ -24,7 +27,7 @@ function BookInsert({ onClose }) {
     if (!form.author.trim()) errors.author = "O campo autor é obrigatório.";
     if (
       form.year &&
-      (isNaN(Number(form.year)) ||
+      (Number.isNaN(Number(form.year)) ||
         Number(form.year) < 1 ||
         Number(form.year) > new Date().getFullYear())
     ) {
@@ -65,18 +68,33 @@ function BookInsert({ onClose }) {
   };
 
   return (
-    <Box mt={3}>
+    <Paper
+      elevation={0}
+      sx={{
+        p: { xs: 2, sm: 3 },
+        border: "1px solid",
+        borderColor: "divider",
+      }}
+    >
       <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
         <Button
           variant="text"
           startIcon={<ArrowBackIcon />}
           onClick={onClose}
-          sx={{ minWidth: 0, px: 1 }}
+          sx={{ minWidth: 0 }}
         >
           Voltar
         </Button>
-        <Typography variant="h6">Cadastrar livro</Typography>
       </Box>
+
+      <Typography variant="h5" component="h2">
+        Cadastrar livro
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        Preencha os dados principais para incluir o livro no acervo.
+      </Typography>
+
+      <Divider sx={{ mb: 2 }} />
 
       {serverError && (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -111,38 +129,41 @@ function BookInsert({ onClose }) {
           )}
         </Box>
 
-        <Box>
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+          <Box sx={{ flex: 1 }}>
+            <TextField
+              fullWidth
+              label="Ano de publicação"
+              type="number"
+              value={form.year}
+              onChange={handleChange("year")}
+              error={Boolean(fieldErrors.year)}
+            />
+            {fieldErrors.year && (
+              <FormHelperText error>{fieldErrors.year}</FormHelperText>
+            )}
+          </Box>
+
           <TextField
             fullWidth
-            label="Ano de publicação"
+            label="Número de edições"
             type="number"
-            value={form.year}
-            onChange={handleChange("year")}
-            error={Boolean(fieldErrors.year)}
+            value={form.edition_count}
+            onChange={handleChange("edition_count")}
+            sx={{ flex: 1 }}
           />
-          {fieldErrors.year && (
-            <FormHelperText error>{fieldErrors.year}</FormHelperText>
-          )}
-        </Box>
+        </Stack>
 
-        <TextField
-          fullWidth
-          label="Número de edições"
-          type="number"
-          value={form.edition_count}
-          onChange={handleChange("edition_count")}
-        />
-
-        <Stack direction="row" spacing={2}>
-          <Button variant="contained" onClick={handleSubmit} disabled={loading}>
-            Salvar
-          </Button>
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} justifyContent="flex-end">
           <Button variant="outlined" onClick={onClose}>
             Cancelar
           </Button>
+          <Button variant="contained" startIcon={<SaveIcon />} onClick={handleSubmit} disabled={loading}>
+            Salvar
+          </Button>
         </Stack>
       </Stack>
-    </Box>
+    </Paper>
   );
 }
 
