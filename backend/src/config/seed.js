@@ -1,5 +1,5 @@
-import bcrypt from "bcryptjs";
 import { getWriteDb } from "./database.js";
+import { hashPassword } from "./password.js";
 
 const db = getWriteDb();
 
@@ -8,12 +8,14 @@ const users = [
   { username: "usuario", password: "senha123" },
 ];
 
-const insert = db.prepare(
-  "INSERT OR IGNORE INTO users (username, password) VALUES (?, ?)"
-);
+const insert = db.prepare(`
+  INSERT INTO users (username, password)
+  VALUES (?, ?)
+  ON CONFLICT(username) DO UPDATE SET password = excluded.password
+`);
 
 for (const user of users) {
-  const hash = bcrypt.hashSync(user.password, 12);
+  const hash = hashPassword(user.password);
   insert.run(user.username, hash);
 }
 

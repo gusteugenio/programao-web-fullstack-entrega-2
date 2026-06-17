@@ -1,4 +1,3 @@
-import jwt from "jsonwebtoken";
 import TokenModel from "../models/TokenModel.js";
 
 export function requireAuth(req, res, next) {
@@ -10,16 +9,13 @@ export function requireAuth(req, res, next) {
 
   const token = header.split(" ")[1];
 
-  try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
+  TokenModel.deleteExpired();
+  const session = TokenModel.findValid(token);
 
-    if (payload.jti && TokenModel.isRevoked(payload.jti)) {
-      return res.status(401).json({ error: "Token inválido ou expirado." });
-    }
-
-    req.user = payload;
-    next();
-  } catch {
+  if (!session) {
     return res.status(401).json({ error: "Token inválido ou expirado." });
   }
+
+  req.user = { id: session.user_id, username: session.username, token: session.token };
+  next();
 }

@@ -1,11 +1,10 @@
 import { Router } from "express";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import rateLimit from "express-rate-limit";
 import crypto from "crypto";
 import UserModel from "../models/UserModel.js";
 import LogModel from "../models/LogModel.js";
 import TokenModel from "../models/TokenModel.js";
+import { verifyPassword } from "../config/password.js";
 
 const router = Router();
 
@@ -30,17 +29,20 @@ router.post("/login", loginLimiter, (req, res) => {
   }
 
   const user = UserModel.findByUsername(username.trim());
+  const passwordOk = user ? verifyPassword(password, user.password) : false;
 
-  if (!user || !bcrypt.compareSync(password, user.password)) {
+  if (!user || !passwordOk) {
     LogModel.authEvent({ username: username.trim(), event: "LOGIN_FAILED", ip });
     return res.status(401).json({ error: "Usuário ou senha inválidos." });
   }
 
-  const token = jwt.sign(
-    { id: user.id, username: user.username, jti: crypto.randomUUID() },
-    process.env.JWT_SECRET,
-    { expiresIn: "2h" }
-  );
+  TokenModel.deleteExpired();
+  const token = crypto.randomBytes(32).toString("hex");
+  const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 19)
+    .replace("T", " ");
+  TokenModel.create({ token, userId: user.id, expiresAt });
 
   LogModel.authEvent({ username: user.username, event: "LOGIN_SUCCESS", ip });
 
@@ -52,22 +54,11 @@ router.post("/logout", (req, res) => {
 
   if (header && header.startsWith("Bearer ")) {
     const token = header.split(" ")[1];
-    const payload = (() => {
-      try {
-        return jwt.verify(token, process.env.JWT_SECRET);
-      } catch {
-        return null;
-      }
-    })();
+    const session = TokenModel.findValid(token);
 
-    if (payload?.jti && payload?.exp) {
-      TokenModel.deleteExpired();
-      TokenModel.revoke({
-        jti: payload.jti,
-        username: payload.username,
-        expiresAt: new Date(payload.exp * 1000).toISOString().slice(0, 19).replace("T", " "),
-      });
-      LogModel.authEvent({ username: payload.username, event: "LOGOUT", ip: req.ip });
+    if (session) {
+      TokenModel.delete(token);
+      LogModel.authEvent({ username: session.username, event: "LOGOUT", ip: req.ip });
     }
   }
 

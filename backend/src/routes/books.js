@@ -2,43 +2,49 @@ import { Router } from "express";
 import BookModel from "../models/BookModel.js";
 import LogModel from "../models/LogModel.js";
 import { requireAuth } from "../config/auth.js";
-import { clearCacheByPrefix, getCachedValue, setCachedValue } from "../config/cache.js";
+import { cache } from "../config/cache.js";
 
 const router = Router();
 
 router.use(requireAuth);
 
-router.get("/", (req, res) => {
-  const { title, author } = req.query;
+router.get(
+  "/",
+  (req, res, next) => {
+    const { title, author } = req.query;
 
-  if (title !== undefined && !title.trim() && author !== undefined && !author.trim()) {
-    return res.status(422).json({ error: "Informe ao menos um critério de busca (título ou autor)." });
-  }
-
-  const sanitizedTitle = title ? String(title).slice(0, 200) : undefined;
-  const sanitizedAuthor = author ? String(author).slice(0, 200) : undefined;
-  const cacheKey = `books:${sanitizedTitle ?? ""}:${sanitizedAuthor ?? ""}`;
-
-  try {
-    const cachedBooks = getCachedValue(cacheKey);
-    const books = cachedBooks ?? BookModel.findAll({ title: sanitizedTitle, author: sanitizedAuthor });
-
-    if (!cachedBooks) {
-      setCachedValue(cacheKey, books);
+    if (title !== undefined && !title.trim() && author !== undefined && !author.trim()) {
+      return res.status(422).json({ error: "Informe ao menos um critério de busca (título ou autor)." });
     }
 
-    LogModel.actionEvent({
-      user_id: req.user.id,
-      action: "SEARCH",
-      detail: JSON.stringify({ title: sanitizedTitle, author: sanitizedAuthor }),
-      ip: req.ip,
-    });
+    const sanitizedTitle = title ? String(title).slice(0, 200) : "";
+    const sanitizedAuthor = author ? String(author).slice(0, 200) : "";
+    res.express_redis_cache_name = `books:title=${sanitizedTitle}:author=${sanitizedAuthor}`;
+    next();
+  },
+  cache.route(),
+  (req, res) => {
+    const { title, author } = req.query;
 
-    return res.json(books);
-  } catch (err) {
-    return res.status(500).json({ error: "Erro ao buscar livros." });
+    const sanitizedTitle = title ? String(title).slice(0, 200) : undefined;
+    const sanitizedAuthor = author ? String(author).slice(0, 200) : undefined;
+
+    try {
+      const books = BookModel.findAll({ title: sanitizedTitle, author: sanitizedAuthor });
+
+      LogModel.actionEvent({
+        user_id: req.user.id,
+        action: "SEARCH",
+        detail: JSON.stringify({ title: sanitizedTitle, author: sanitizedAuthor }),
+        ip: req.ip,
+      });
+
+      return res.json(books);
+    } catch (err) {
+      return res.status(500).json({ error: "Erro ao buscar livros." });
+    }
   }
-});
+);
 
 router.post("/", (req, res) => {
   const { title, author, year, edition_count } = req.body;
@@ -67,7 +73,7 @@ router.post("/", (req, res) => {
       created_by: req.user.id,
     });
 
-    clearCacheByPrefix("books:");
+    cache.del("books:*", () => {});
 
     LogModel.actionEvent({
       user_id: req.user.id,

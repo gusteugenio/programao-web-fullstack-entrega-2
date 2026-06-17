@@ -4,12 +4,12 @@ Aplicação web fullstack para cadastro e busca de livros, desenvolvida com Reac
 
 ## Funcionalidades
 
-- Login com autenticação JWT
+- Login com token de sessão persistido em banco
 - Listagem de livros cadastrados
 - Busca de livros por título ou autor
 - Cadastro de novos livros
 - Logout com invalidação de token
-- Cache em memória para buscas no backend
+- Cache Redis para buscas no backend
 - Pool de conexões SQLite para leitura e escrita
 - Suporte a HTTPS por configuração
 
@@ -17,7 +17,7 @@ Aplicação web fullstack para cadastro e busca de livros, desenvolvida com Reac
 
 **Frontend:** React.js, Material UI, Vite
 
-**Backend:** Node.js, Express.js, SQLite (better-sqlite3)
+**Backend:** Node.js, Express.js, SQLite (better-sqlite3), express-redis-cache
 
 ## Como rodar
 
@@ -30,6 +30,8 @@ cp .env.example .env
 node src/config/seed.js
 npm run dev
 ```
+
+Se for usar o cache, suba também um servidor Redis local em `REDIS_HOST:REDIS_PORT`.
 
 ### Frontend
 

@@ -1,25 +1,35 @@
 import { getReadDb, getWriteDb } from "../config/database.js";
 
 class TokenModel {
-  revoke({ jti, username, expiresAt }) {
+  create({ token, userId, expiresAt }) {
     getWriteDb()
       .prepare(
-        "INSERT OR REPLACE INTO revoked_tokens (jti, username, expires_at) VALUES (?, ?, ?)"
+        "INSERT OR REPLACE INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)"
       )
-      .run(jti, username ?? null, expiresAt);
+      .run(token, userId, expiresAt);
   }
 
-  isRevoked(jti) {
-    return Boolean(
-      getReadDb()
-        .prepare("SELECT jti FROM revoked_tokens WHERE jti = ? LIMIT 1")
-        .get(jti)
-    );
+  findValid(token) {
+    return getReadDb()
+      .prepare(
+        `SELECT s.token, s.user_id, s.expires_at, u.username
+         FROM sessions s
+         JOIN users u ON u.id = s.user_id
+         WHERE s.token = ? AND s.expires_at > CURRENT_TIMESTAMP
+         LIMIT 1`
+      )
+      .get(token);
+  }
+
+  delete(token) {
+    getWriteDb()
+      .prepare("DELETE FROM sessions WHERE token = ?")
+      .run(token);
   }
 
   deleteExpired() {
     getWriteDb()
-      .prepare("DELETE FROM revoked_tokens WHERE expires_at <= CURRENT_TIMESTAMP")
+      .prepare("DELETE FROM sessions WHERE expires_at <= CURRENT_TIMESTAMP")
       .run();
   }
 }

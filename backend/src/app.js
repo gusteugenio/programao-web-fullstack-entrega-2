@@ -2,7 +2,6 @@ import "dotenv/config";
 import express from "express";
 import http from "http";
 import https from "https";
-import helmet from "helmet";
 import compression from "compression";
 import morgan from "morgan";
 import cors from "cors";
@@ -17,7 +16,6 @@ const app = express();
 
 app.set("trust proxy", 1);
 
-app.use(helmet());
 app.use(compression());
 app.use(cors({ origin: process.env.CORS_ORIGIN || "http://localhost:5173" }));
 app.use(express.json({ limit: "10kb" }));

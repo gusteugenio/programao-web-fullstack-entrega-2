@@ -1,32 +1,13 @@
-const ttlMs = Math.max(1000, Number(process.env.CACHE_TTL_MS || 60_000));
-const store = new Map();
+import expressRedisCache from "express-redis-cache";
 
-export function getCachedValue(key) {
-  const entry = store.get(key);
+export const cache = expressRedisCache({
+  host: process.env.REDIS_HOST || "127.0.0.1",
+  port: Number(process.env.REDIS_PORT || 6379),
+  auth_pass: process.env.REDIS_PASSWORD || undefined,
+  prefix: "books-api",
+  expire: Number(process.env.CACHE_TTL_SECONDS || 60),
+});
 
-  if (!entry) {
-    return null;
-  }
-
-  if (entry.expiresAt <= Date.now()) {
-    store.delete(key);
-    return null;
-  }
-
-  return entry.value;
-}
-
-export function setCachedValue(key, value, customTtlMs = ttlMs) {
-  store.set(key, {
-    value,
-    expiresAt: Date.now() + customTtlMs,
-  });
-}
-
-export function clearCacheByPrefix(prefix) {
-  for (const key of store.keys()) {
-    if (key.startsWith(prefix)) {
-      store.delete(key);
-    }
-  }
-}
+cache.on("error", (error) => {
+  console.error("Redis cache error:", error.message);
+});
