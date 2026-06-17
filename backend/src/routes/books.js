@@ -2,6 +2,7 @@ import { Router } from "express";
 import BookModel from "../models/BookModel.js";
 import LogModel from "../models/LogModel.js";
 import { requireAuth } from "../config/auth.js";
+import { clearCacheByPrefix, getCachedValue, setCachedValue } from "../config/cache.js";
 
 const router = Router();
 
@@ -16,9 +17,15 @@ router.get("/", (req, res) => {
 
   const sanitizedTitle = title ? String(title).slice(0, 200) : undefined;
   const sanitizedAuthor = author ? String(author).slice(0, 200) : undefined;
+  const cacheKey = `books:${sanitizedTitle ?? ""}:${sanitizedAuthor ?? ""}`;
 
   try {
-    const books = BookModel.findAll({ title: sanitizedTitle, author: sanitizedAuthor });
+    const cachedBooks = getCachedValue(cacheKey);
+    const books = cachedBooks ?? BookModel.findAll({ title: sanitizedTitle, author: sanitizedAuthor });
+
+    if (!cachedBooks) {
+      setCachedValue(cacheKey, books);
+    }
 
     LogModel.actionEvent({
       user_id: req.user.id,
@@ -59,6 +66,8 @@ router.post("/", (req, res) => {
       edition_count: edition_count ? Number(edition_count) : 0,
       created_by: req.user.id,
     });
+
+    clearCacheByPrefix("books:");
 
     LogModel.actionEvent({
       user_id: req.user.id,

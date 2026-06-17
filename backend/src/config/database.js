@@ -5,18 +5,25 @@ import fs from "fs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dbPath = path.resolve(__dirname, "../../data/app.db");
+const poolSize = Math.max(2, Number(process.env.DB_POOL_SIZE || 4));
 
 const dataDir = path.dirname(dbPath);
 if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
 
-const db = new Database(dbPath);
+function createConnection() {
+  const connection = new Database(dbPath);
+  connection.pragma("journal_mode = WAL");
+  connection.pragma("foreign_keys = ON");
+  return connection;
+}
 
-db.pragma("journal_mode = WAL");
-db.pragma("foreign_keys = ON");
+const writeDb = createConnection();
+const readPool = Array.from({ length: poolSize }, createConnection);
+let readIndex = 0;
 
-db.exec(`
+writeDb.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
@@ -51,6 +58,29 @@ db.exec(`
     ip TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS revoked_tokens (
+    jti TEXT PRIMARY KEY,
+    username TEXT,
+    revoked_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    expires_at DATETIME NOT NULL
+  );
 `);
 
-export default db;
+export function getWriteDb() {
+  return writeDb;
+}
+
+export function getReadDb() {
+  const connection = readPool[readIndex];
+  readIndex = (readIndex + 1) % readPool.length;
+  return connection;
+}
+
+export function getPoolInfo() {
+  return {
+    engine: "better-sqlite3",
+    readPoolSize: readPool.length,
+    writeConnections: 1,
+  };
+}

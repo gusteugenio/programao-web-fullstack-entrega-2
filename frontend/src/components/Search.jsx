@@ -15,25 +15,30 @@ function Search() {
   const [fieldError, setFieldError] = useState("");
 
   const handleSearch = async () => {
+    if (!query.title.trim() && !query.author.trim()) {
+      setFieldError("Informe ao menos um título ou autor.");
+      return;
+    }
+
     setFieldError("");
     await searchBooks();
   };
 
-  const handleChange = (e) => {
+  const handleChange = (field) => (e) => {
     const value = e.target.value;
-    setQuery(value);
+    setQuery(field, value);
     if (value.trim()) setFieldError("");
   };
 
   return (
     <Box mt={2}>
-      <Stack direction="row" spacing={2} alignItems="flex-start">
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="flex-start">
         <TextField
           fullWidth
-          label="Nome do livro"
-          value={query}
+          label="Título"
+          value={query.title}
           error={Boolean(fieldError)}
-          onChange={handleChange}
+          onChange={handleChange("title")}
           onKeyDown={(e) => e.key === "Enter" && handleSearch()}
           InputProps={{
             startAdornment: (
@@ -44,12 +49,21 @@ function Search() {
           }}
         />
 
+        <TextField
+          fullWidth
+          label="Autor"
+          value={query.author}
+          error={Boolean(fieldError)}
+          onChange={handleChange("author")}
+          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+        />
+
         <Button
           variant="contained"
           onClick={handleSearch}
           disabled={loading}
           startIcon={<SearchIcon />}
-          sx={{ minWidth: 120, height: 56 }}
+          sx={{ minWidth: 120, height: 56, width: { xs: "100%", sm: "auto" } }}
         >
           Buscar
         </Button>

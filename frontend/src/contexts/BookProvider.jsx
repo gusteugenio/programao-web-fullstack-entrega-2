@@ -7,17 +7,20 @@ const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 export function BooksProvider({ children }) {
   const { token, logout } = useAuth();
 
-  const [query, setQueryState] = useState("");
+  const [query, setQueryState] = useState({ title: "", author: "" });
   const [books, setBooks] = useState([]);
   const [selectedBook, setSelectedBook] = useState(null);
   const [searchError, setSearchError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const setQuery = (value) => {
-    setQueryState(value);
+  const setQuery = (field, value) => {
+    setQueryState((prev) => ({ ...prev, [field]: value }));
     setSearchError("");
 
-    if (!value.trim()) {
+    if (
+      (field === "title" ? value : query.title).trim() === "" &&
+      (field === "author" ? value : query.author).trim() === ""
+    ) {
       setSelectedBook(null);
     }
   };
@@ -61,7 +64,7 @@ export function BooksProvider({ children }) {
   const searchBooks = async () => {
     setSearchError("");
 
-    if (!query.trim()) {
+    if (!query.title.trim() && !query.author.trim()) {
       await fetchAll();
       return true;
     }
@@ -70,7 +73,13 @@ export function BooksProvider({ children }) {
       setLoading(true);
       setSelectedBook(null);
 
-      const params = new URLSearchParams({ title: query.trim() });
+      const params = new URLSearchParams();
+      if (query.title.trim()) {
+        params.set("title", query.title.trim());
+      }
+      if (query.author.trim()) {
+        params.set("author", query.author.trim());
+      }
       const res = await fetch(`${API}/api/books?${params}`, {
         headers: authHeaders(),
       });

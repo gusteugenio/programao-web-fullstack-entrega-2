@@ -60,10 +60,6 @@ function BookInsert({ onClose }) {
       return;
     }
 
-    if (query.trim()) {
-      await searchBooks();
-    }
-
     await searchBooks();
     onClose();
   };

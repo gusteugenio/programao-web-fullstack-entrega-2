@@ -1,4 +1,4 @@
-import db from "../config/database.js";
+import { getReadDb, getWriteDb } from "../config/database.js";
 
 class BookModel {
   findAll({ title, author } = {}) {
@@ -17,17 +17,17 @@ class BookModel {
 
     query += " ORDER BY b.created_at DESC";
 
-    return db.prepare(query).all(...params);
+    return getReadDb().prepare(query).all(...params);
   }
 
   findById(id) {
-    return db
+    return getReadDb()
       .prepare("SELECT b.*, u.username as inserted_by FROM books b JOIN users u ON b.created_by = u.id WHERE b.id = ?")
       .get(id);
   }
 
   create({ title, author, year, edition_count, created_by }) {
-    const result = db
+    const result = getWriteDb()
       .prepare(
         "INSERT INTO books (title, author, year, edition_count, created_by) VALUES (?, ?, ?, ?, ?)"
       )

@@ -1,5 +1,7 @@
 import bcrypt from "bcryptjs";
-import db from "./database.js";
+import { getWriteDb } from "./database.js";
+
+const db = getWriteDb();
 
 const users = [
   { username: "admin", password: "admin123" },

@@ -2,8 +2,10 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import rateLimit from "express-rate-limit";
+import crypto from "crypto";
 import UserModel from "../models/UserModel.js";
 import LogModel from "../models/LogModel.js";
+import TokenModel from "../models/TokenModel.js";
 
 const router = Router();
 
@@ -35,7 +37,7 @@ router.post("/login", loginLimiter, (req, res) => {
   }
 
   const token = jwt.sign(
-    { id: user.id, username: user.username },
+    { id: user.id, username: user.username, jti: crypto.randomUUID() },
     process.env.JWT_SECRET,
     { expiresIn: "2h" }
   );
@@ -49,15 +51,22 @@ router.post("/logout", (req, res) => {
   const header = req.headers.authorization;
 
   if (header && header.startsWith("Bearer ")) {
+    const token = header.split(" ")[1];
     const payload = (() => {
       try {
-        return jwt.decode(header.split(" ")[1]);
+        return jwt.verify(token, process.env.JWT_SECRET);
       } catch {
         return null;
       }
     })();
 
-    if (payload) {
+    if (payload?.jti && payload?.exp) {
+      TokenModel.deleteExpired();
+      TokenModel.revoke({
+        jti: payload.jti,
+        username: payload.username,
+        expiresAt: new Date(payload.exp * 1000).toISOString().slice(0, 19).replace("T", " "),
+      });
       LogModel.authEvent({ username: payload.username, event: "LOGOUT", ip: req.ip });
     }
   }
